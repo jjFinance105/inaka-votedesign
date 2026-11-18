@@ -8,7 +8,7 @@
 var SHEET_NAME = 'votes';
 var HEADERS = ['id', 'name', 'picks', 'none', 'comment', 'done', 'ts', 'updatedAt'];
 var IDS = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
-var MAX_ROWS = 2000;
+var MAX_ROWS = 500;
 var MAX_BODY = 4000;
 
 function getSheet_() {
@@ -41,6 +41,15 @@ function clean_(v, max) {
   return String(v == null ? '' : v).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '').slice(0, max);
 }
 
+// 公開用ID: 投票者ID(書き込み鍵)そのものは返さず、ハッシュの先頭16桁だけを返す
+function pid_(id) {
+  var d = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, id, Utilities.Charset.UTF_8);
+  return d.map(function (b) { return ('0' + (b & 0xff).toString(16)).slice(-2); }).join('').slice(0, 16);
+}
+// 表計算の数式注入対策: 先頭が = + - @ タブ 改行 の文字列は ' を付けて保存し、読み出し時に外す
+function esc_(s) { return /^[=+\-@\t\r]/.test(s) ? "'" + s : s; }
+function unesc_(s) { return /^'[=+\-@\t\r]/.test(s) ? s.slice(1) : s; }
+
 function doGet(e) {
   var action = e && e.parameter && e.parameter.action;
   if (action !== 'list') return json_({ ok: true, service: 'meishi-vote' });
@@ -52,11 +61,11 @@ function doGet(e) {
     rows.forEach(function (r) {
       if (!r[0]) return;
       votes.push({
-        id: String(r[0]),
-        name: String(r[1] || ''),
+        pid: pid_(String(r[0])),
+        name: unesc_(String(r[1] || '')),
         picks: r[2] ? String(r[2]).split(',') : [],
         none: String(r[3]) === 'true',
-        comment: String(r[4] || ''),
+        comment: unesc_(String(r[4] || '')),
         done: String(r[5]) === 'true',
         ts: Number(r[6]) || 0
       });
@@ -80,10 +89,10 @@ function doPost(e) {
     if (!isFinite(ts) || ts < 0) ts = 0;
     var row = [
       id,
-      clean_(d.name, 30).trim(),
+      esc_(clean_(d.name, 30).trim()),
       picks.join(','),
       String(d.none === true && picks.length === 0),
-      clean_(d.comment, 500),
+      esc_(clean_(d.comment, 500)),
       String(d.done === true),
       String(Math.round(ts)),
       new Date().toISOString()
