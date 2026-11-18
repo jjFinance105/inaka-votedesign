@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'sha256-jbGQlmW+ObvYpG3sO0ORtQNb4zm1L/3DT9saAaEJwLM='; connect-src https://script.google.com https://script.googleusercontent.com; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'sha256-uRL0pat2Zevi41g9sUamVf2RTVBFknopY6bHaRh+a0k='; connect-src https://script.google.com https://script.googleusercontent.com; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
 <title>名刺デザイン投票</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;500;600&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Noto+Sans+KR:wght@400;500&family=Noto+Serif+KR:wght@500&family=Noto+Sans+SC:wght@400;500&family=Noto+Serif+SC:wght@500&display=swap">
@@ -453,7 +453,7 @@ function startLocal(){
   if(!$("#view-results").hidden)renderResults();
 }
 /* ---------- Google Apps Script backend (REST) ---------- */
-var ENDPOINT="https://script.google.com/macros/s/AKfycbxY3TiWJvu4R5_SMdygXWKs69tJTUJdOYilD1HLSlZd9ENmS-tMIYWH-GqN0__Ax3nhTw/exec";
+var ENDPOINT="https://script.google.com/macros/s/AKfycbyTzF0HFy_jn4_5SihP8sSg3s_UNzvBpgnWGJYAslakTu-_AA43wlIg47yZxwrmlPNGhw/exec";
 var refreshVotes=null;
 function voterId(){
   var v=null;try{v=localStorage.getItem("inaka-vote-vid");}catch(e){}
