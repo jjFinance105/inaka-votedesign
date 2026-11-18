@@ -1,8 +1,10 @@
 /**
  * 名刺デザイン投票 バックエンド (Google Apps Script)
  * - 投票は Google スプレッドシート「名刺デザイン投票」に自動保存されます（初回実行時に自動作成）。
- * - GET  ?action=list  : 全員分の投票を JSON で返す
+ * - GET  ?action=list  : 集計用の公開データのみ返す（名前・コメント・投票者IDは含めない）
  * - POST (text/plain JSON) : 1人分の投票を id で上書き保存
+ * - POST {action:"get",id}  : 本人の回答だけを返す（再開用。他人の分は返さない）
+ * 名前とコメントはスプレッドシート「名刺デザイン投票」にだけ残り、主催者のみ閲覧できます。
  * 秘密情報は含みません。
  */
 var SHEET_NAME = 'votes';
@@ -62,16 +64,37 @@ function doGet(e) {
       if (!r[0]) return;
       votes.push({
         pid: pid_(String(r[0])),
-        name: unesc_(String(r[1] || '')),
         picks: r[2] ? String(r[2]).split(',') : [],
         none: String(r[3]) === 'true',
-        comment: unesc_(String(r[4] || '')),
         done: String(r[5]) === 'true',
         ts: Number(r[6]) || 0
       });
     });
   }
-  return json_({ ok: true, votes: votes });
+  return json_({ ok: true, v: 2, votes: votes });
+}
+
+// 本人の回答だけを返す（投票者IDを知っている本人のみ）
+function getMine_(id) {
+  var sh = getSheet_();
+  var last = sh.getLastRow();
+  if (last > 1) {
+    var rows = sh.getRange(2, 1, Math.min(last - 1, MAX_ROWS), HEADERS.length).getValues();
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      if (String(r[0]) === id) {
+        return json_({ ok: true, mine: {
+          name: unesc_(String(r[1] || '')),
+          picks: r[2] ? String(r[2]).split(',') : [],
+          none: String(r[3]) === 'true',
+          comment: unesc_(String(r[4] || '')),
+          done: String(r[5]) === 'true',
+          ts: Number(r[6]) || 0
+        } });
+      }
+    }
+  }
+  return json_({ ok: true, mine: null });
 }
 
 function doPost(e) {
@@ -81,6 +104,7 @@ function doPost(e) {
     var d = JSON.parse(raw);
     var id = String(d.id || '');
     if (!/^[A-Za-z0-9_-]{8,64}$/.test(id)) return json_({ ok: false, error: 'id' });
+    if (d.action === 'get') return getMine_(id);
     var picks = [];
     (Array.isArray(d.picks) ? d.picks : []).forEach(function (p) {
       if (typeof p === 'string' && IDS.indexOf(p) >= 0 && picks.indexOf(p) < 0 && picks.length < 2) picks.push(p);
